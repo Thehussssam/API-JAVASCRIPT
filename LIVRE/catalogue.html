@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bibliothèque Lumière — Catalogue</title>
+    <meta name="description" content="Explorez le catalogue complet de la Bibliothèque Lumière, vos livres préférés en un clic." />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="site-brand">
+          <span class="logo-icon">📚</span>
+          <h1>Bibliothèque Lumière</h1>
+        </div>
+        <a href="ajouter-livre.html" class="btn-primary" id="btnAddBook">+ Ajouter un Livre</a>
+      </header>
+
+      <div class="stats-bar" id="statsBar"></div>
+
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Rechercher un titre ou un auteur…" />
+      </div>
+
+      <div id="books"></div>
+    </div>
+
+    <script>
+      /* ── Default books with Open Library cover images ── */
+      const defaultBooks = [
+        {
+          code: 1,
+          titre: "Le Petit Prince",
+          auteur: "Antoine de Saint-Exupéry",
+          annee: 1943,
+          prix: 89,
+          disponible: true,
+          image: "https://covers.openlibrary.org/b/id/8739161-L.jpg"
+        },
+        {
+          code: 2,
+          titre: "Les Misérables",
+          auteur: "Victor Hugo",
+          annee: 1862,
+          prix: 145,
+          disponible: true,
+          image: "https://covers.openlibrary.org/b/id/9257895-L.jpg"
+        },
+        {
+          code: 3,
+          titre: "L'Étranger",
+          auteur: "Albert Camus",
+          annee: 1942,
+          prix: 95,
+          disponible: false,
+          image: "https://covers.openlibrary.org/b/id/8231855-L.jpg"
+        },
+        {
+          code: 4,
+          titre: "Germinal",
+          auteur: "Émile Zola",
+          annee: 1885,
+          prix: 110,
+          disponible: true,
+          image: "https://covers.openlibrary.org/b/id/12647857-L.jpg"
+        },
+        {
+          code: 5,
+          titre: "Notre-Dame de Paris",
+          auteur: "Victor Hugo",
+          annee: 1831,
+          prix: 120,
+          disponible: true,
+          image: "https://covers.openlibrary.org/b/id/10389221-L.jpg"
+        },
+        {
+          code: 6,
+          titre: "Madame Bovary",
+          auteur: "Gustave Flaubert",
+          annee: 1857,
+          prix: 98,
+          disponible: false,
+          image: "https://covers.openlibrary.org/b/id/8739162-L.jpg"
+        },
+        {
+          code: 7,
+          titre: "Le Comte de Monte-Cristo",
+          auteur: "Alexandre Dumas",
+          annee: 1844,
+          prix: 160,
+          disponible: true,
+          image: "https://covers.openlibrary.org/b/id/8228691-L.jpg"
+        },
+        {
+          code: 8,
+          titre: "Voyage au bout de la nuit",
+          auteur: "Louis-Ferdinand Céline",
+          annee: 1932,
+          prix: 105,
+          disponible: true,
+          image: "https://covers.openlibrary.org/b/id/10606715-L.jpg"
+        }
+      ];
+
+      /* Load from localStorage or seed defaults */
+      let bibliotheque = JSON.parse(localStorage.getItem("bibliotheque"));
+      if (!bibliotheque || bibliotheque.length === 0 || !bibliotheque[0].image) {
+        bibliotheque = defaultBooks;
+        localStorage.setItem("bibliotheque", JSON.stringify(bibliotheque));
+      }
+
+      const booksContainer = document.getElementById("books");
+      const searchInput    = document.getElementById("searchInput");
+      const statsBar       = document.getElementById("statsBar");
+
+      /* ── Stats bar ── */
+      function updateStats() {
+        const total = bibliotheque.length;
+        const dispo = bibliotheque.filter(b => b.disponible).length;
+        statsBar.innerHTML = `
+          <div class="stat-pill">📖 <strong>${total}</strong> livres</div>
+          <div class="stat-pill">✅ <strong>${dispo}</strong> disponibles</div>
+          <div class="stat-pill">🔒 <strong>${total - dispo}</strong> réservés</div>
+        `;
+      }
+
+      /* ── Fallback cover ── */
+      const FALLBACK = "https://via.placeholder.com/400x280/1a1108/f59e0b?text=📚+Couverture";
+
+      /* ── Card builder ── */
+      function createBookCard(book, index) {
+        const card = document.createElement("div");
+        card.classList.add("card");
+
+        /* Cover wrapper */
+        const coverWrap = document.createElement("div");
+        coverWrap.className = "card-cover-wrapper";
+
+        const img = document.createElement("img");
+        img.className = "card-cover";
+        img.src = book.image || FALLBACK;
+        img.alt = `Couverture — ${book.titre}`;
+        img.loading = "lazy";
+        img.onerror = () => { img.src = FALLBACK; };
+        coverWrap.appendChild(img);
+
+        /* Body */
+        const body = document.createElement("div");
+        body.className = "card-body";
+
+        const title = document.createElement("h3");
+        title.textContent = book.titre;
+
+        const authorEl = document.createElement("p");
+        authorEl.className = "author";
+        authorEl.innerHTML = `✍️ ${book.auteur}`;
+
+        const metaEl = document.createElement("p");
+        metaEl.className = "meta";
+        metaEl.textContent = `${book.annee}  •  ${book.prix} MAD`;
+
+        const badge = document.createElement("span");
+        badge.className = `badge ${book.disponible ? "disponible" : "indisponible"}`;
+        badge.innerHTML = book.disponible ? "✔ Disponible" : "✖ Indisponible";
+
+        const actions = document.createElement("div");
+        actions.className = "card-actions";
+
+        const reserveBtn = document.createElement("button");
+        reserveBtn.className = `btn-reserve${!book.disponible ? " reserved" : ""}`;
+        reserveBtn.textContent = book.disponible ? "Réserver" : "Libérer";
+
+        reserveBtn.addEventListener("click", () => {
+          book.disponible = !book.disponible;
+          badge.className = `badge ${book.disponible ? "disponible" : "indisponible"}`;
+          badge.innerHTML = book.disponible ? "✔ Disponible" : "✖ Indisponible";
+          reserveBtn.className = `btn-reserve${!book.disponible ? " reserved" : ""}`;
+          reserveBtn.textContent = book.disponible ? "Réserver" : "Libérer";
+          localStorage.setItem("bibliotheque", JSON.stringify(bibliotheque));
+          updateStats();
+        });
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "btn-delete";
+        deleteBtn.textContent = "Supprimer";
+        deleteBtn.addEventListener("click", () => {
+          if (confirm(`Supprimer "${book.titre}" ?`)) {
+            bibliotheque.splice(index, 1);
+            localStorage.setItem("bibliotheque", JSON.stringify(bibliotheque));
+            renderBooks();
+          }
+        });
+
+        actions.append(reserveBtn, deleteBtn);
+        body.append(title, authorEl, metaEl, badge, actions);
+        card.append(coverWrap, body);
+        booksContainer.appendChild(card);
+      }
+
+      /* ── Render ── */
+      function renderBooks(filter = "") {
+        booksContainer.innerHTML = "";
+        const filtered = bibliotheque.filter(b =>
+          b.titre.toLowerCase().includes(filter.toLowerCase()) ||
+          b.auteur.toLowerCase().includes(filter.toLowerCase())
+        );
+        if (filtered.length === 0) {
+          booksContainer.innerHTML = `
+            <div class="empty-state">
+              <div class="icon">📭</div>
+              <p>Aucun livre trouvé pour « ${filter} »</p>
+            </div>`;
+        } else {
+          filtered.forEach((book, i) => createBookCard(book, bibliotheque.indexOf(book)));
+        }
+        updateStats();
+      }
+
+      searchInput.addEventListener("input", () => renderBooks(searchInput.value));
+      renderBooks();
+    </script>
+  </body>
+</html>

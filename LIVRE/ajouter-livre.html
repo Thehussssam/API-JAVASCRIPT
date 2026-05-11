@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bibliothèque Lumière — Ajouter un Livre</title>
+    <meta name="description" content="Ajoutez un nouveau livre au catalogue de la Bibliothèque Lumière." />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+
+      <!-- Header -->
+      <header>
+        <div class="site-brand">
+          <span class="logo-icon">📚</span>
+          <h1>Bibliothèque Lumière</h1>
+        </div>
+        <a href="catalogue.html" class="btn-primary" id="btnBack">← Catalogue</a>
+      </header>
+
+      <!-- Form card -->
+      <div class="form-container">
+
+        <div style="text-align:center; margin-bottom:32px;">
+          <div style="font-size:3rem; margin-bottom:12px;">📖</div>
+          <h2>Ajouter un Nouveau Livre</h2>
+          <p style="color:var(--text-secondary); font-size:0.9rem; margin-top:8px;">
+            Remplissez les informations ci-dessous pour enrichir le catalogue.
+          </p>
+        </div>
+
+        <form id="addBookForm" novalidate>
+
+          <div class="form-group">
+            <label for="code">Code</label>
+            <input type="number" id="code" required placeholder="Ex : 101" min="1" />
+          </div>
+
+          <div class="form-group">
+            <label for="titre">Titre</label>
+            <input type="text" id="titre" required placeholder="Titre du livre" />
+          </div>
+
+          <div class="form-group">
+            <label for="auteur">Auteur</label>
+            <input type="text" id="auteur" required placeholder="Nom de l'auteur" />
+          </div>
+
+          <div class="form-group">
+            <label for="annee">Année de publication</label>
+            <input type="number" id="annee" required placeholder="Ex : 1998" min="1000" max="2099" />
+          </div>
+
+          <div class="form-group">
+            <label for="prix">Prix (MAD)</label>
+            <input type="number" id="prix" required placeholder="Ex : 120" min="0" />
+          </div>
+
+          <div class="form-group">
+            <label for="image">URL de la couverture</label>
+            <input
+              type="url"
+              id="image"
+              placeholder="https://… (optionnel)"
+            />
+          </div>
+
+          <!-- Cover preview -->
+          <div id="previewWrapper" style="display:none; margin-bottom:22px; text-align:center;">
+            <img
+              id="coverPreview"
+              src=""
+              alt="Aperçu de la couverture"
+              style="max-height:180px; border-radius:10px; border:1px solid var(--card-border);
+                     box-shadow:0 8px 24px rgba(0,0,0,0.4); object-fit:cover;"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="disponible">Statut</label>
+            <select id="disponible">
+              <option value="true">✔ Disponible</option>
+              <option value="false">✖ Indisponible</option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn-primary btn-block" id="submitBtn">
+            ✚ Ajouter au Catalogue
+          </button>
+        </form>
+
+        <a href="catalogue.html" class="back-link" id="backLink">← Retour au catalogue</a>
+      </div>
+    </div>
+
+    <script>
+      /* ── Cover preview ── */
+      const imageInput    = document.getElementById("image");
+      const previewWrapper= document.getElementById("previewWrapper");
+      const coverPreview  = document.getElementById("coverPreview");
+
+      imageInput.addEventListener("input", () => {
+        const url = imageInput.value.trim();
+        if (url) {
+          coverPreview.src = url;
+          previewWrapper.style.display = "block";
+          coverPreview.onerror = () => { previewWrapper.style.display = "none"; };
+        } else {
+          previewWrapper.style.display = "none";
+        }
+      });
+
+      /* ── Form submit ── */
+      const form = document.getElementById("addBookForm");
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const bibliotheque = JSON.parse(localStorage.getItem("bibliotheque")) || [];
+
+        const newBook = {
+          code:      parseInt(document.getElementById("code").value),
+          titre:     document.getElementById("titre").value.trim(),
+          auteur:    document.getElementById("auteur").value.trim(),
+          annee:     parseInt(document.getElementById("annee").value),
+          prix:      parseFloat(document.getElementById("prix").value),
+          disponible:document.getElementById("disponible").value === "true",
+          image:     document.getElementById("image").value.trim() ||
+                     `https://via.placeholder.com/400x280/1a1108/f59e0b?text=${encodeURIComponent(document.getElementById("titre").value.trim())}`
+        };
+
+        bibliotheque.push(newBook);
+        localStorage.setItem("bibliotheque", JSON.stringify(bibliotheque));
+
+        /* Feedback animation on button */
+        const btn = document.getElementById("submitBtn");
+        btn.textContent = "✔ Livre ajouté !";
+        btn.style.background = "linear-gradient(135deg,#34d399,#059669)";
+
+        setTimeout(() => {
+          window.location.href = "catalogue.html";
+        }, 900);
+      });
+    </script>
+  </body>
+</html>
